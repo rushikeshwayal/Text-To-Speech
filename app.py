@@ -5,8 +5,8 @@ from google.cloud import texttospeech
 import requests
 import tempfile
 
-# Azure OpenAI setup
-AZURE_API_KEY = '22ec84421ec24230a3638d1b51e3a7dc'
+# Set your Azure OpenAI configuration
+AZURE_API_KEY = st.secrets["AZURE_API_KEY"]  # Store your key in secrets.toml for security
 AZURE_ENDPOINT = 'https://internshala.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-08-01-preview'
 
 # Function to transcribe audio using Google Speech-to-Text
@@ -37,6 +37,11 @@ def correct_transcription(transcription):
     }
     
     response = requests.post(AZURE_ENDPOINT, headers=headers, json=data)
+    
+    if response.status_code != 200:
+        st.error("Error with GPT-4 API: " + response.text)
+        return transcription  # Return original transcription in case of an error
+    
     corrected_text = response.json()['choices'][0]['message']['content']
     
     return corrected_text
@@ -72,6 +77,9 @@ def replace_audio(video_path, audio_path):
 
 # Streamlit app
 st.title("Video Audio Replacement with AI")
+st.write("Upload a video file, and we'll replace the audio with corrected transcription from Google Speech-to-Text!")
+
+# Video uploader
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
 
 if uploaded_file:
